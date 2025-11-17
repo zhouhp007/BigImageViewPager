@@ -340,7 +340,7 @@ class ImagePreviewFragment : Fragment() {
 
         // 初始化播放器
         if (exoPlayer == null) {
-            exoPlayer = imagePreviewActivity?.getExoPlayer()
+            exoPlayer = imagePreviewActivity?.getExoPlayer(requireActivity())
             exoPlayer?.addListener(object : Player.Listener {
                 override fun onVideoSizeChanged(videoSize: VideoSize) {
                     super.onVideoSizeChanged(videoSize)

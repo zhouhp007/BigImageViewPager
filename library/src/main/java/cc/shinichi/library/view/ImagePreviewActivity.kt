@@ -2,6 +2,7 @@ package cc.shinichi.library.view
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -23,6 +24,9 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.cache.CacheDataSink
+import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.viewpager.widget.ViewPager.OnPageChangeListener
@@ -42,6 +46,7 @@ import cc.shinichi.library.tool.common.PhoneUtil
 import cc.shinichi.library.tool.common.SLog
 import cc.shinichi.library.tool.common.ToastUtil
 import cc.shinichi.library.tool.common.UIUtil
+import cc.shinichi.library.tool.file.ExoCacheManager
 import cc.shinichi.library.tool.image.DownloadUtil
 import cc.shinichi.library.view.listener.OnFinishListener
 import com.bumptech.glide.Glide
@@ -88,6 +93,8 @@ class ImagePreviewActivity : AppCompatActivity(), Handler.Callback, View.OnClick
     private var currentItem = 0
     private var currentItemOriginPathUrl: String? = ""
     private var lastProgress = 0
+
+    private var simpleCache: SimpleCache? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -284,6 +291,9 @@ class ImagePreviewActivity : AppCompatActivity(), Handler.Callback, View.OnClick
         pageChangeListener?.apply {
             viewPager?.addOnPageChangeListener(this)
         }
+
+        // 创建缓存对象
+        simpleCache = ExoCacheManager.getSimpleCache(this)
     }
 
     private fun refreshUIMargin() {
@@ -315,18 +325,28 @@ class ImagePreviewActivity : AppCompatActivity(), Handler.Callback, View.OnClick
     }
 
     @OptIn(UnstableApi::class)
-    fun getExoPlayer(): ExoPlayer {
-        // 创建带自定义 Header 的 HttpDataSource.Factory
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
+    fun getExoPlayer(context: Context): ExoPlayer {
+        // 5. 构建 HTTP 数据源工厂
+        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setConnectTimeoutMs(10_000)
             .setReadTimeoutMs(10_000)
             .setAllowCrossProtocolRedirects(true)
             .setDefaultRequestProperties(ImagePreview.instance.headers?.toMap() ?: mapOf())
-        // 创建 ExoPlayer
-        val exoPlayer = ExoPlayer.Builder(this@ImagePreviewActivity)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+
+        // 6. 构建缓存数据源工厂
+        val cacheDataSourceFactory = CacheDataSource.Factory()
+            .setCache(simpleCache!!)
+            .setUpstreamDataSourceFactory(httpDataSourceFactory)
+            .setCacheWriteDataSinkFactory(CacheDataSink.Factory().setCache(simpleCache!!))
+            .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+
+        // 7. 使用缓存的数据源创建 MediaSourceFactory
+        val mediaSourceFactory = DefaultMediaSourceFactory(cacheDataSourceFactory)
+
+        // 8. 构建并返回 ExoPlayer
+        return ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
             .build()
-        return exoPlayer
     }
 
     /**
@@ -349,6 +369,7 @@ class ImagePreviewActivity : AppCompatActivity(), Handler.Callback, View.OnClick
     }
 
     override fun finish() {
+        ExoCacheManager.release()
         for (fragment in fragmentList) {
             fragment.onRelease()
         }
