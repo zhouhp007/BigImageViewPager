@@ -25,6 +25,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import cc.shinichi.library.ImagePreview
 import cc.shinichi.library.ImagePreview.LoadStrategy
+import cc.shinichi.library.ImagePreview.VideoPlayPolicy
 import cc.shinichi.library.R
 import cc.shinichi.library.callback.SimpleOnImageEventListener
 import cc.shinichi.library.core.GlobalContext
@@ -438,7 +439,30 @@ class ImagePreviewFragment : Fragment() {
         session.prepare()
 
         if (ImagePreview.instance.index == position) {
-            // 如果是当前选中的，就播放
+            // 如果是当前选中的，根据播放策略决定是否自动播放
+            playByPolicyIfPermitted()
+        }
+    }
+
+    /**
+     * 根据当前 [VideoPlayPolicy] 和网络环境决定是否自动播放视频。
+     *
+     * - [VideoPlayPolicy.WiFiAndMobile]: 始终自动播放
+     * - [VideoPlayPolicy.WiFiOnly]: 仅 WiFi 下自动播放
+     * - [VideoPlayPolicy.Manual]: 不自动播放，需手动点击播放按钮
+     */
+    private fun playByPolicyIfPermitted() {
+        val session = videoSession ?: return
+        val policy = ImagePreview.instance.videoPlayPolicy
+        val activity = imagePreviewActivity ?: return
+
+        val shouldAutoPlay = when (policy) {
+            VideoPlayPolicy.WiFiAndMobile -> true
+            VideoPlayPolicy.WiFiOnly -> isWiFi(activity)
+            VideoPlayPolicy.Manual -> false
+        }
+        SLog.d(TAG, "playByPolicyIfPermitted: policy=$policy, shouldAutoPlay=$shouldAutoPlay")
+        if (shouldAutoPlay) {
             session.play()
         }
     }
@@ -657,7 +681,7 @@ class ImagePreviewFragment : Fragment() {
         if (imageInfo?.type == Type.VIDEO && VideoPlayerHelper.isVideoPlaybackSupported()) {
             val session = videoSession ?: return
             session.seekTo(0)
-            session.play()
+            playByPolicyIfPermitted()
         }
     }
 
@@ -718,7 +742,16 @@ class ImagePreviewFragment : Fragment() {
             if (imageInfo?.type == Type.VIDEO && VideoPlayerHelper.isVideoPlaybackSupported()) {
                 // 后台前是播放的才恢复播放
                 if (onPausePlaying) {
-                    videoSession?.play()
+                    val policy = ImagePreview.instance.videoPlayPolicy
+                    val activity = imagePreviewActivity
+                    val shouldAutoPlay = when (policy) {
+                        VideoPlayPolicy.WiFiAndMobile -> true
+                        VideoPlayPolicy.WiFiOnly -> activity != null && isWiFi(activity)
+                        VideoPlayPolicy.Manual -> false
+                    }
+                    if (shouldAutoPlay) {
+                        videoSession?.play()
+                    }
                 }
             }
         }

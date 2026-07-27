@@ -31,6 +31,7 @@
 - 支持 **超大图 / 超长图 / GIF / 视频**
 - 支持 **双指缩放 / 平移 / 左右滑动切换**
 - 支持 **原图查看 / 下载 / 加载进度监听**
+- 支持 **视频播放策略**：WiFi 自动播放 / 始终自动播放 / 手动播放
 - 支持 **数据源动态更新与删除**
 - 采用 **区块复用加载**，有效降低内存占用并减少 OOM 风险
 
@@ -38,7 +39,7 @@
 
 ## 安装
 
-> 当前版本：`androidx-9.2.1`
+> 当前版本：`androidx-9.2.2`
 
 ### 1) 添加仓库
 
@@ -54,10 +55,10 @@
 ```gradle
 dependencies {
     // 必选：核心库（图片能力）
-    implementation "com.gouqinglin:BigImageViewPager:androidx-9.2.1"
+    implementation "com.gouqinglin:BigImageViewPager:androidx-9.2.2"
 
     // 可选：视频插件（需要视频预览时添加）
-    implementation "com.gouqinglin:BigImageViewPager-media3:androidx-9.2.1"
+    implementation "com.gouqinglin:BigImageViewPager-media3:androidx-9.2.2"
 
     // 必选：Glide
     def glideVersion = "4.16.0"
@@ -105,6 +106,19 @@ ImagePreview.getInstance().setContext(MainActivity.this).setMediaInfoList(imageI
 
 更多参数配置见：[`doc/DETAIL.md`](doc/DETAIL.md)
 
+### 3) 视频播放策略（可选）
+
+```
+// 设置视频仅在 WiFi 下自动播放
+ImagePreview.getInstance()
+    .setContext(MainActivity.this)
+    .setMediaInfoList(imageInfoList)
+    .setVideoPlayPolicy(ImagePreview.VideoPlayPolicy.WiFiOnly)
+    .start();
+```
+
+三种策略：`WiFiOnly` / `WiFiAndMobile`（默认） / `Manual`
+
 ---
 
 ## 模块拆分与迁移
@@ -137,6 +151,8 @@ ImagePreview.getInstance().setContext(MainActivity.this).setMediaInfoList(imageI
 
 ## 更新日志
 
+- `androidx-9.2.2`：新增视频播放策略 `VideoPlayPolicy`，支持 WiFi 自动播放 / 始终自动播放 / 手动播放
+- `androidx-9.2.1`：修复视频 Fragment 回收后只有音频的问题，清理残留 View 引用
 - `androidx-9.2.0`：ExoPlayer (Media3) 改为可选依赖，仅图片场景可减少 APK 体积
 - `androidx-8.4.7`：支持 32 位 16KB page size 特性
 - `androidx-8.4.6`：新增支持 `res` 资源

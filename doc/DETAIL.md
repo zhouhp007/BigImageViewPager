@@ -153,6 +153,49 @@ MainActivity.java</a>
 
 注：以上所有方式，如果原图缓存存在，会默认加载原图缓存保证清晰度；且原图缓存只要存在，就不会显示查看原图按钮。
 
+#### 4.5：视频播放策略
+
+`VideoPlayPolicy` 控制视频类型的自动播放行为，不影响手动点击播放按钮：
+
+```
+enum class VideoPlayPolicy {
+    /** 仅 WiFi 下自动播放 */
+    WiFiOnly,
+
+    /** WiFi 和移动数据下都自动播放（默认） */
+    WiFiAndMobile,
+
+    /** 不自动播放，需要手动点击播放按钮 */
+    Manual
+}
+```
+
+用法：
+
+```
+// 链式调用
+ImagePreview
+    .getInstance()
+    .setContext(MainActivity.this)
+    .setMediaInfoList(imageInfoList)
+    .setVideoPlayPolicy(ImagePreview.VideoPlayPolicy.WiFiOnly) // 仅 WiFi 自动播放
+    .start();
+
+// DSL 风格
+ImagePreview.show(this) {
+    setMediaInfoList(imageInfoList)
+    setIndex(0)
+    setVideoPlayPolicy(ImagePreview.VideoPlayPolicy.WiFiOnly)
+}
+```
+
+生效时机：
+- 首次加载视频页（initData）
+- 滑动切换到视频页（onSelected）
+- 从后台恢复时（onResume）
+
+> 注：手动点击播放按钮不受此策略限制，用户始终可以主动播放。
+
 #### 5：完全自定义预览界面布局：
 
 详细操作请参考Demo：<https://github.com/SherlockGougou/BigImageViewPager/blob/master/sample/src/main/java/cc/shinichi/bigimageviewpager/MainActivity.java>

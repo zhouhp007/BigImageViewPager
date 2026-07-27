@@ -114,6 +114,10 @@ class ImagePreview private constructor() {
     var loadStrategy = LoadStrategy.Auto
         private set
 
+    // 视频播放策略
+    var videoPlayPolicy = VideoPlayPolicy.WiFiAndMobile
+        private set
+
     // 长图的展示模式
     var longPicDisplayMode = LongPicDisplayMode.Default
         private set
@@ -307,6 +311,11 @@ class ImagePreview private constructor() {
         return this
     }
 
+    fun setVideoPlayPolicy(videoPlayPolicy: VideoPlayPolicy): ImagePreview {
+        this.videoPlayPolicy = videoPlayPolicy
+        return this
+    }
+
     fun setEnableDragClose(enableDragClose: Boolean): ImagePreview {
         isEnableDragClose = enableDragClose
         return this
@@ -476,6 +485,7 @@ class ImagePreview private constructor() {
 
         loadStrategy = LoadStrategy.Default
         longPicDisplayMode = LongPicDisplayMode.Default
+        videoPlayPolicy = VideoPlayPolicy.WiFiAndMobile
 
         previewLayoutResId = R.layout.sh_layout_preview
         onCustomLayoutCallback = null
@@ -572,6 +582,20 @@ class ImagePreview private constructor() {
 
         /** 左右拉满，双击缩小，可手动缩放（适合竖屏手机） */
         FillWidth
+    }
+
+    /**
+     * 视频播放策略
+     */
+    enum class VideoPlayPolicy {
+        /** 仅 WiFi 下自动播放 */
+        WiFiOnly,
+
+        /** WiFi 和移动数据下都自动播放 */
+        WiFiAndMobile,
+
+        /** 不自动播放，需要手动点击播放按钮 */
+        Manual
     }
 
     // ==================== 单例实现 ====================
